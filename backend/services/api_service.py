@@ -220,44 +220,148 @@ class APIService:
     @staticmethod
     def fetch_flight_connections(country):
         """
-        Mock flight connections restricted to countries appearing in the Training Dataset.
-        This ensures every node in the graph gets a valid ML prediction.
+        Flight connections STRICTLY limited to countries in the training dataset.
+        All countries here exist in REGION_MAP/climate_disease_dataset.csv.
+        This ensures every node in BFS gets a valid ML prediction.
         """
-        # Graph optimized for the 120 countries in climate_disease_dataset.csv
+        from utils.constants import REGION_MAP
+        
+        # All connections use ONLY dataset countries (verified against REGION_MAP)
         connections = {
             # --- SOUTH ASIA & MIDDLE EAST HUB ---
             'Pakistan': ['United Arab Emirates', 'Saudi Arabia', 'Iran', 'Bangladesh', 'Oman'],
-            'Bangladesh': ['Pakistan', 'Myanmar', 'Nepal', 'India'], # India is missing, mapped to Nepal/Myanmar
+            'Bangladesh': ['Pakistan', 'Myanmar', 'Nepal'],  # All in dataset
             'Iran': ['Pakistan', 'Turkmenistan', 'Armenia', 'Azerbaijan'],
             'United Arab Emirates': ['Pakistan', 'Saudi Arabia', 'Egypt', 'Germany', 'Oman'],
-            'Saudi Arabia': ['United Arab Emirates', 'Egypt', 'Sudan', 'Ethiopia', 'Pakistan'],
+            'Saudi Arabia': ['United Arab Emirates', 'Egypt', 'Ethiopia', 'Pakistan', 'Oman'],
             'Oman': ['United Arab Emirates', 'Pakistan', 'Saudi Arabia'],
+            'Armenia': ['Iran', 'Azerbaijan'],
+            'Azerbaijan': ['Iran', 'Armenia', 'Turkmenistan'],
+            'Turkmenistan': ['Iran', 'Azerbaijan', 'Uzbekistan', 'Tajikistan'],
+            'Uzbekistan': ['Turkmenistan', 'Tajikistan'],
+            'Tajikistan': ['Turkmenistan', 'Uzbekistan'],
+            'Nepal': ['Bangladesh', 'Myanmar'],
+            'Myanmar': ['Bangladesh', 'Nepal', "Lao People's Democratic Republic", 'Cambodia'],
+            'Cambodia': ['Myanmar', "Lao People's Democratic Republic", 'Singapore'],
+            "Lao People's Democratic Republic": ['Myanmar', 'Cambodia'],
 
-            # --- EUROPE HUB (Germany/Belgium/Sweden/Ireland) ---
-            'Germany': ['United Arab Emirates', 'Belgium', 'Poland', 'Czech Republic', 'Denmark', 'Sweden'],
-            'Belgium': ['Germany', 'France', 'Ireland', 'Netherlands'], # France missing? Use Ireland
-            'Ireland': ['Belgium', 'Portugal', 'Brazil'], # Gateway to Americas
-            'Sweden': ['Germany', 'Finland', 'Estonia', 'Denmark'],
+            # --- EUROPE HUB ---
+            'Germany': ['United Arab Emirates', 'Belgium', 'Poland', 'Czech Republic', 'Denmark', 'Sweden', 'Netherlands'],
+            'Belgium': ['Germany', 'Ireland', 'Netherlands', 'Poland'],
+            'Ireland': ['Belgium', 'Portugal', 'Brazil'],
+            'Sweden': ['Germany', 'Finland', 'Estonia', 'Denmark', 'Poland'],
             'Portugal': ['Ireland', 'Brazil', 'Morocco'],
+            'Poland': ['Germany', 'Belgium', 'Sweden', 'Czech Republic', 'Hungary'],
+            'Czech Republic': ['Germany', 'Poland', 'Hungary', 'Slovakia (Slovak Republic)'],
+            'Hungary': ['Poland', 'Czech Republic', 'Serbia', 'Slovenia', 'Montenegro'],
+            'Denmark': ['Germany', 'Sweden', 'Finland'],
+            'Finland': ['Sweden', 'Denmark', 'Estonia'],
+            'Estonia': ['Sweden', 'Finland'],
+            'Netherlands': ['Germany', 'Belgium'],
+            'Serbia': ['Hungary', 'Montenegro', 'Bulgaria'],
+            'Montenegro': ['Hungary', 'Serbia'],
+            'Slovenia': ['Hungary'],
+            'Bulgaria': ['Serbia'],
+            'Slovakia (Slovak Republic)': ['Czech Republic', 'Hungary'],
+            'Cyprus': ['Egypt', 'Israel'],
+            'Israel': ['Cyprus', 'Egypt'],
+            'Malta': ['Egypt'],
+            'Monaco': ['Belgium'],
+            'Liechtenstein': ['Germany'],
+            'San Marino': ['Hungary'],
 
-            # --- EAST ASIA HUB (Japan/Korea/Philippines) ---
-            'Japan': ['Korea', 'Philippines', 'Guam', 'United Arab Emirates'],
-            'Korea': ['Japan', 'China', 'Philippines'], # China missing? Map to neighbors
-            'Philippines': ['Japan', 'Korea', 'Palau', 'Singapore'],
-            
+            # --- EAST ASIA & PACIFIC HUB ---
+            'Japan': ['Korea', 'Philippines', 'Guam', 'Hong Kong'],
+            'Korea': ['Japan', 'Philippines', 'Hong Kong'],
+            'Philippines': ['Japan', 'Korea', 'Palau', 'Singapore', 'Hong Kong'],
+            'Hong Kong': ['Japan', 'Korea', 'Philippines', 'Macao', 'Singapore'],
+            'Macao': ['Hong Kong', 'Philippines'],
+            'Singapore': ['Philippines', 'Hong Kong', 'Cambodia'],
+            'Guam': ['Japan', 'Palau', 'Micronesia', 'Northern Mariana Islands'],
+            'Palau': ['Philippines', 'Guam', 'Micronesia'],
+            'Micronesia': ['Guam', 'Palau', 'Marshall Islands'],
+            'Marshall Islands': ['Micronesia', 'Kiribati'],
+            'Kiribati': ['Marshall Islands', 'Fiji', 'Tuvalu'],
+            'Fiji': ['Kiribati', 'Tonga', 'New Caledonia', 'Tuvalu'],
+            'Tonga': ['Fiji', 'American Samoa'],
+            'Tuvalu': ['Fiji', 'Kiribati'],
+            'American Samoa': ['Tonga', 'French Polynesia'],
+            'French Polynesia': ['American Samoa', 'New Caledonia'],
+            'New Caledonia': ['Fiji', 'French Polynesia', 'Papua New Guinea'],
+            'Papua New Guinea': ['New Caledonia'],
+            'Northern Mariana Islands': ['Guam'],
+
             # --- AFRICA HUB ---
-            'Egypt': ['Saudi Arabia', 'United Arab Emirates', 'Sudan', 'Ethiopia', 'Morocco'],
-            'Ethiopia': ['Egypt', 'Kenya', 'Sudan', 'Saudi Arabia'],
-            'Kenya': ['Ethiopia', 'Nigeria', 'South Africa'],
-            'Nigeria': ['Kenya', 'Ghana', 'Togo', 'Benin'],
-            'South Africa': ['Kenya', 'Mozambique', 'Namibia', 'Lesotho'],
-            'Morocco': ['Portugal', 'Egypt', 'Mauritania'],
+            'Egypt': ['Saudi Arabia', 'United Arab Emirates', 'Ethiopia', 'Morocco', 'Kenya', 'Nigeria', 'Cyprus', 'Israel', 'Malta'],
+            'Ethiopia': ['Egypt', 'Kenya', 'Saudi Arabia', 'Djibouti'],
+            'Kenya': ['Ethiopia', 'Nigeria', 'South Africa', 'Egypt', 'Rwanda', 'Mozambique'],
+            'Nigeria': ['Kenya', 'Togo', 'Egypt', 'Morocco', 'Mali', 'Chad', 'Congo', 'Gabon'],
+            'South Africa': ['Kenya', 'Mozambique', 'Namibia', 'Lesotho', 'Zimbabwe'],
+            'Morocco': ['Portugal', 'Egypt', 'Mauritania', 'Mali', 'Nigeria'],
+            'Djibouti': ['Ethiopia'],
+            'Rwanda': ['Kenya', 'Congo'],
+            'Togo': ['Nigeria', 'Burkina Faso', 'Mali', 'Gabon'],
+            'Mali': ['Nigeria', 'Morocco', 'Mauritania', 'Burkina Faso', 'Togo'],
+            'Mauritania': ['Morocco', 'Mali'],
+            'Burkina Faso': ['Mali', 'Togo'],
+            'Chad': ['Nigeria', 'Congo', 'Gabon'],
+            'Congo': ['Nigeria', 'Chad', 'Gabon', 'Rwanda'],
+            'Gabon': ['Nigeria', 'Togo', 'Congo', 'Chad', 'Sao Tome and Principe'],
+            'Sao Tome and Principe': ['Gabon'],
+            'Mozambique': ['South Africa', 'Kenya', 'Zimbabwe', 'Mauritius', 'Reunion', 'Mayotte'],
+            'Namibia': ['South Africa'],
+            'Lesotho': ['South Africa'],
+            'Zimbabwe': ['South Africa', 'Mozambique'],
+            'Mauritius': ['Mozambique', 'Reunion', 'Mayotte'],
+            'Reunion': ['Mozambique', 'Mauritius', 'Mayotte'],
+            'Mayotte': ['Mozambique', 'Mauritius', 'Reunion'],
+            'Liberia': ['Guinea-Bissau'],
+            'Guinea-Bissau': ['Liberia'],
 
-            # --- AMERICAS HUB (Brazil/Mexico/Colombia) ---
-            'Brazil': ['Portugal', 'Colombia', 'Peru', 'Suriname', 'Mexico'],
+            # --- AMERICAS HUB ---
+            'Brazil': ['Portugal', 'Colombia', 'Peru', 'Suriname', 'Mexico', 'French Guiana', 'Guyana', 'Ireland'],
             'Colombia': ['Brazil', 'Ecuador', 'Peru', 'Mexico'],
-            'Mexico': ['Brazil', 'Colombia', 'Cuba', 'Guatemala'],
-            'Cuba': ['Mexico', 'Bahamas', 'Dominican Republic'],
-            'Peru': ['Brazil', 'Colombia', 'Ecuador', 'Chile']
+            'Mexico': ['Brazil', 'Colombia', 'Cuba', 'El Salvador'],
+            'Cuba': ['Mexico', 'Bahamas', 'Dominican Republic', 'Dominica'],
+            'Peru': ['Brazil', 'Colombia', 'Ecuador', 'Chile'],
+            'Ecuador': ['Colombia', 'Peru'],
+            'Chile': ['Peru', 'Falkland Islands (Malvinas)'],
+            'Bahamas': ['Cuba', 'Dominican Republic'],
+            'Dominican Republic': ['Cuba', 'Bahamas', 'Barbados', 'Dominica', 'Grenada'],
+            'Barbados': ['Dominican Republic', 'Grenada', 'Antigua and Barbuda', 'Saint Lucia'],
+            'Dominica': ['Cuba', 'Dominican Republic', 'Guadeloupe', 'Martinique'],
+            'Grenada': ['Dominican Republic', 'Barbados', 'Saint Vincent and the Grenadines'],
+            'Antigua and Barbuda': ['Barbados', 'Saint Kitts and Nevis', 'Montserrat'],
+            'Saint Kitts and Nevis': ['Antigua and Barbuda'],
+            'Saint Lucia': ['Barbados', 'Saint Vincent and the Grenadines', 'Martinique'],
+            'Saint Vincent and the Grenadines': ['Grenada', 'Saint Lucia'],
+            'Guadeloupe': ['Dominica', 'Martinique'],
+            'Martinique': ['Dominica', 'Guadeloupe', 'Saint Lucia'],
+            'Montserrat': ['Antigua and Barbuda'],
+            'Suriname': ['Brazil', 'French Guiana', 'Guyana'],
+            'French Guiana': ['Brazil', 'Suriname'],
+            'Guyana': ['Brazil', 'Suriname'],
+            'El Salvador': ['Mexico'],
+            'Aruba': ['Colombia'],
+            'Falkland Islands (Malvinas)': ['Chile'],
+            'Saint Pierre and Miquelon': ['Greenland'],
+            'Greenland': ['Denmark', 'Saint Pierre and Miquelon'],
+
+            # --- REMOTE/ISLAND TERRITORIES ---
+            'Wallis and Futuna': ['Fiji'],
+            'Pitcairn Islands': ['French Polynesia'],
+            'Saint Helena': ['Namibia'],
+            'Saint Barthelemy': ['Guadeloupe'],
+            'Cocos (Keeling) Islands': ['Christmas Island'],
+            'Christmas Island': ['Cocos (Keeling) Islands', 'Singapore'],
+            'Isle of Man': ['Ireland'],
+            'Palestinian Territory': ['Israel'],
+            'Syrian Arab Republic': ['Cyprus'],
+            'Antarctica (the territory South of 60 deg S)': ['Chile'],
+            'South Georgia and the South Sandwich Islands': ['Falkland Islands (Malvinas)']
         }
-        return connections.get(country, [])
+        
+        # Validate that returned connections are in dataset
+        result = connections.get(country, [])
+        valid_connections = [c for c in result if c in REGION_MAP]
+        return valid_connections
