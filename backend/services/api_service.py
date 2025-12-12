@@ -217,20 +217,80 @@ class APIService:
         water_stagnation_index = (precip_factor * 0.6 + temp_factor * 0.4) * 100
         return round(water_stagnation_index, 2)
 
+    # Country to IATA airport code mapping for Aviation API
+    COUNTRY_AIRPORT_MAP = {
+        'Pakistan': 'KHI', 'Bangladesh': 'DAC', 'Iran': 'IKA', 'United Arab Emirates': 'DXB',
+        'Saudi Arabia': 'JED', 'Oman': 'MCT', 'Germany': 'FRA', 'Belgium': 'BRU',
+        'Sweden': 'ARN', 'Ireland': 'DUB', 'Portugal': 'LIS', 'Poland': 'WAW',
+        'Czech Republic': 'PRG', 'Hungary': 'BUD', 'Denmark': 'CPH', 'Finland': 'HEL',
+        'Estonia': 'TLL', 'Netherlands': 'AMS', 'Serbia': 'BEG', 'Montenegro': 'TGD',
+        'Slovenia': 'LJU', 'Bulgaria': 'SOF', 'Japan': 'NRT', 'Korea': 'ICN',
+        'Philippines': 'MNL', 'Hong Kong': 'HKG', 'Macao': 'MFM', 'Singapore': 'SIN',
+        'Egypt': 'CAI', 'Ethiopia': 'ADD', 'Kenya': 'NBO', 'Nigeria': 'LOS',
+        'South Africa': 'JNB', 'Morocco': 'CMN', 'Brazil': 'GRU', 'Colombia': 'BOG',
+        'Mexico': 'MEX', 'Peru': 'LIM', 'Cuba': 'HAV', 'Ecuador': 'UIO',
+        'Chile': 'SCL', 'Armenia': 'EVN', 'Azerbaijan': 'GYD', 'Nepal': 'KTM',
+        'Myanmar': 'RGN', 'Cambodia': 'PNH', 'Cyprus': 'LCA', 'Israel': 'TLV',
+        'Malta': 'MLA', 'Guam': 'GUM', 'Fiji': 'SUV', 'Bahamas': 'NAS',
+        'Dominican Republic': 'SDQ', 'Barbados': 'BGI', 'Suriname': 'PBM',
+        'Rwanda': 'KGL', 'Mozambique': 'MPM', 'Namibia': 'WDH', 'Zimbabwe': 'HRE',
+        'Mauritius': 'MRU', 'Togo': 'LFW', 'Mali': 'BKO', 'Gabon': 'LBV',
+        'Congo': 'BZV', 'Chad': 'NDJ', 'Djibouti': 'JIB'
+    }
+    
+    # Reverse mapping: IATA code to country name
+    AIRPORT_COUNTRY_MAP = {v: k for k, v in COUNTRY_AIRPORT_MAP.items()}
+
     @staticmethod
     def fetch_flight_connections(country):
         """
-        Flight connections STRICTLY limited to countries in the training dataset.
-        All countries here exist in REGION_MAP/climate_disease_dataset.csv.
-        This ensures every node in BFS gets a valid ML prediction.
+        Fetch flight connections using Aviation Stack API.
+        Falls back to dataset-restricted connections if API fails.
+        Only returns countries that exist in the training dataset.
         """
         from utils.constants import REGION_MAP
         
-        # All connections use ONLY dataset countries (verified against REGION_MAP)
+        # Try Aviation Stack API first
+        if country in APIService.COUNTRY_AIRPORT_MAP:
+            try:
+                airport_code = APIService.COUNTRY_AIRPORT_MAP[country]
+                url = f"http://api.aviationstack.com/v1/flights?access_key={Config.AVIATION_KEY}&dep_iata={airport_code}&limit=100"
+                response = requests.get(url, timeout=10)
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    if 'data' in data and data['data']:
+                        # Extract unique destination countries
+                        destination_countries = set()
+                        for flight in data['data']:
+                            if flight.get('arrival') and flight['arrival'].get('iata'):
+                                arr_iata = flight['arrival']['iata']
+                                # Map IATA code back to country name
+                                if arr_iata in APIService.AIRPORT_COUNTRY_MAP:
+                                    dest_country = APIService.AIRPORT_COUNTRY_MAP[arr_iata]
+                                    if dest_country in REGION_MAP and dest_country != country:
+                                        destination_countries.add(dest_country)
+                        
+                        if destination_countries:
+                            print(f"Aviation API: Found {len(destination_countries)} connections for {country}")
+                            return list(destination_countries)
+                            
+            except Exception as e:
+                print(f"Aviation API Error for {country}: {e}")
+        
+        # Fallback to curated dataset-restricted connections
+        return APIService._get_fallback_connections(country, REGION_MAP)
+
+    @staticmethod
+    def _get_fallback_connections(country, REGION_MAP):
+        """
+        Fallback flight connections restricted to dataset countries.
+        Used when Aviation API is unavailable or returns no results.
+        """
         connections = {
             # --- SOUTH ASIA & MIDDLE EAST HUB ---
             'Pakistan': ['United Arab Emirates', 'Saudi Arabia', 'Iran', 'Bangladesh', 'Oman'],
-            'Bangladesh': ['Pakistan', 'Myanmar', 'Nepal'],  # All in dataset
+            'Bangladesh': ['Pakistan', 'Myanmar', 'Nepal'],
             'Iran': ['Pakistan', 'Turkmenistan', 'Armenia', 'Azerbaijan'],
             'United Arab Emirates': ['Pakistan', 'Saudi Arabia', 'Egypt', 'Germany', 'Oman'],
             'Saudi Arabia': ['United Arab Emirates', 'Egypt', 'Ethiopia', 'Pakistan', 'Oman'],
@@ -361,7 +421,6 @@ class APIService:
             'South Georgia and the South Sandwich Islands': ['Falkland Islands (Malvinas)']
         }
         
-        # Validate that returned connections are in dataset
         result = connections.get(country, [])
         valid_connections = [c for c in result if c in REGION_MAP]
         return valid_connections
