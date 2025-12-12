@@ -1,8 +1,10 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 from services.ml_service import MLService
 from services.graph_service import GraphService
 
 app = Flask(__name__)
+CORS(app)  # Enable CORS for frontend communication
 
 # Initialize Services
 ml_service = MLService()
