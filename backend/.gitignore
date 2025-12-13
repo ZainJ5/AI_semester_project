@@ -1,3 +1,13 @@
 venv
 .env
 __pycache__
+*.pyc
+*.pyo
+*.db
+.DS_Store
+.vscode
+test_*.py
+test_*.ps1
+analyze_dataset.py
+debug_*.py
+check_*.py
