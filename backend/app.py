@@ -5,16 +5,14 @@ from services.graph_service import GraphService
 from models.prediction_log import PredictionLogger
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for frontend communication
+CORS(app)  
 
-# Initialize Services
 ml_service = MLService()
 graph_service = GraphService(ml_service)
 logger = PredictionLogger()
 
 @app.route('/api/predict', methods=['POST'])
 def predict_endpoint():
-    # Simple ML Prediction
     data = request.get_json()
     country = data.get('country')
     if not country: return jsonify({'error': 'No country'}), 400
@@ -24,18 +22,15 @@ def predict_endpoint():
 
 @app.route('/api/simulation/spread', methods=['POST'])
 def spread_simulation_endpoint():
-    # BFS Endpoint for Graph Visualization
     data = request.get_json()
     country = data.get('country')
     if not country: return jsonify({'error': 'No country'}), 400
     
-    # Run BFS
     graph_data = graph_service.build_simulation_bfs(country)
     return jsonify(graph_data)
 
 @app.route('/api/simulation/path', methods=['POST'])
 def path_analysis_endpoint():
-    # A* Endpoint
     data = request.get_json()
     start = data.get('start_country')
     end = data.get('end_country')
