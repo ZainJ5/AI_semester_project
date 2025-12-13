@@ -101,11 +101,20 @@ class APIService:
                         recs = sorted(data['value'], key=lambda x: x['TimeDim'], reverse=True)
                         
                         # Extract yearly values and convert to monthly estimates
+                        # WHO API returns YEARLY total cases (e.g., Brazil 2017: 238,517)
+                        # Training data has MONTHLY cases with average ~70, range 0-201
+                        # Convert: yearly / 12 gives monthly average, then scale to match training distribution
+                        # Empirically: WHO monthly (~20K) needs to scale to training monthly (~70)
+                        # Scale factor: 20000 / 70 ≈ 285
+                        SCALE_FACTOR = 3000.0  # Divide WHO monthly by this to match training range
+                        
                         yearly_values = []
                         for rec in recs[:12]:  # Get up to 12 years of data
                             if 'NumericValue' in rec and rec['NumericValue'] is not None:
+                                # Convert yearly total to monthly, then scale to training range
                                 monthly_estimate = rec['NumericValue'] / 12.0
-                                yearly_values.append(monthly_estimate)
+                                scaled_monthly = monthly_estimate / SCALE_FACTOR
+                                yearly_values.append(scaled_monthly)
                         
                         if yearly_values:
                             # Calculate lag features (simulating monthly lags from yearly data)
@@ -145,19 +154,23 @@ class APIService:
                 print(f"WHO Historical API Error: {e}")
         
         # Fallback to baseline estimates if API fails
-        baseline = MALARIA_BASELINE_MAP.get(country, 50.0)
-        lag_data['lag_1'] = baseline
-        lag_data['lag_2'] = baseline * 0.95
-        lag_data['lag_3'] = baseline * 0.90
-        lag_data['lag_6'] = baseline * 0.85
-        lag_data['lag_12'] = baseline * 0.80
-        lag_data['roll_mean_3'] = baseline * 0.95
-        lag_data['roll_mean_6'] = baseline * 0.90
-        lag_data['roll_mean_12'] = baseline * 0.85
-        lag_data['roll_std_3'] = baseline * 0.1
-        lag_data['roll_std_6'] = baseline * 0.15
-        lag_data['roll_std_12'] = baseline * 0.2
+        # Training data has monthly malaria cases in range 0-201 (average ~70)
+        # Use baseline map values which are already scaled correctly
+        baseline_monthly = MALARIA_BASELINE_MAP.get(country, 50.0)
         
+        lag_data['lag_1'] = baseline_monthly
+        lag_data['lag_2'] = baseline_monthly * 0.95
+        lag_data['lag_3'] = baseline_monthly * 0.90
+        lag_data['lag_6'] = baseline_monthly * 0.85
+        lag_data['lag_12'] = baseline_monthly * 0.80
+        lag_data['roll_mean_3'] = baseline_monthly * 0.95
+        lag_data['roll_mean_6'] = baseline_monthly * 0.90
+        lag_data['roll_mean_12'] = baseline_monthly * 0.85
+        lag_data['roll_std_3'] = baseline_monthly * 0.1
+        lag_data['roll_std_6'] = baseline_monthly * 0.15
+        lag_data['roll_std_12'] = baseline_monthly * 0.2
+        
+        print(f"Using baseline estimate for {country}: lag_1={lag_data['lag_1']:.2f}, lag_12={lag_data['lag_12']:.2f}")
         return lag_data
 
     @staticmethod
