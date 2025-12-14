@@ -225,3 +225,52 @@ const Prediction = () => {
                   </div>
                 </div>
               </div>
+
+              {/* Prediction Explanation */}
+              {prediction.prediction?.explanation && (
+                <div className="explanation-section">
+                  <h4>🔍 Why This Prediction?</h4>
+                  
+                  {/* Environmental Impact */}
+                  {prediction.prediction.explanation.environmental_impact && (
+                    <div className="explanation-card">
+                      <h5>Environmental Impact</h5>
+                      <ul className="explanation-list">
+                        {prediction.prediction.explanation.environmental_impact.map((impact, idx) => (
+                          <li key={idx}>{impact}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Historical Trend */}
+                  {prediction.prediction.explanation.historical_trend && (
+                    <div className="explanation-card">
+                      <h5>Historical Context</h5>
+                      <p className="explanation-text">{prediction.prediction.explanation.historical_trend}</p>
+                    </div>
+                  )}
+
+                  {/* Risk Factors */}
+                  {prediction.prediction.explanation.risk_factors && (
+                    <div className="explanation-card">
+                      <h5>Key Risk Factors</h5>
+                      <ul className="explanation-list">
+                        {prediction.prediction.explanation.risk_factors.map((factor, idx) => (
+                          <li key={idx}>{factor}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default Prediction;
+
