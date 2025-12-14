@@ -36,4 +36,22 @@ export const apiService = {
     }
   },
 
+  
+  findSafestPath: async (startCountry, endCountry) => {
+    try {
+      console.log('[API] Sending path finding request from', startCountry, 'to', endCountry);
+      const response = await api.post('/simulation/path', {
+        start_country: startCountry,
+        end_country: endCountry,
+      });
+      console.log('[API] Path finding response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('[API] Path finding error:', error);
+      console.error('[API] Error details:', error.response?.data || error.message);
+      throw error;
+    }
+  },
+};
+
 export default apiService;
