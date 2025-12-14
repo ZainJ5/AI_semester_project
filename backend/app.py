@@ -20,6 +20,7 @@ def predict_endpoint():
     result = ml_service.predict_country(country)
     return jsonify({'country': country, 'prediction': result})
 
+@app.route('/api/simulation/spread', methods=['POST'])
 def spread_simulation_endpoint():
     data = request.get_json()
     country = data.get('country')
