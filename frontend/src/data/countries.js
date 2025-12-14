@@ -1,0 +1,25 @@
+// List of countries available in the dataset
+export const COUNTRIES = [
+  'American Samoa', 'Antarctica (the territory South of 60 deg S)', 'Antigua and Barbuda',
+  'Armenia', 'Aruba', 'Azerbaijan', 'Bahamas', 'Bangladesh', 'Barbados', 'Belgium',
+  'Brazil', 'Bulgaria', 'Burkina Faso', 'Cambodia', 'Chad', 'Chile', 'Christmas Island',
+  'Cocos (Keeling) Islands', 'Colombia', 'Congo', 'Cuba', 'Cyprus', 'Czech Republic',
+  'Denmark', 'Djibouti', 'Dominica', 'Dominican Republic', 'Ecuador', 'Egypt',
+  'El Salvador', 'Estonia', 'Ethiopia', 'Falkland Islands (Malvinas)', 'Fiji',
+  'Finland', 'French Guiana', 'French Polynesia', 'Gabon', 'Germany', 'Greenland',
+  'Grenada', 'Guadeloupe', 'Guam', 'Guinea-Bissau', 'Guyana', 'Hong Kong', 'Hungary',
+  'Iran', 'Ireland', 'Isle of Man', 'Israel', 'Japan', 'Kenya', 'Kiribati', 'Korea',
+  "Lao People's Democratic Republic", 'Lesotho', 'Liberia', 'Liechtenstein', 'Macao',
+  'Mali', 'Malta', 'Marshall Islands', 'Martinique', 'Mauritania', 'Mauritius',
+  'Mayotte', 'Mexico', 'Micronesia', 'Monaco', 'Montenegro', 'Montserrat', 'Morocco',
+  'Mozambique', 'Myanmar', 'Namibia', 'Nepal', 'Netherlands', 'New Caledonia',
+  'Nigeria', 'Northern Mariana Islands', 'Oman', 'Pakistan', 'Palau',
+  'Palestinian Territory', 'Papua New Guinea', 'Peru', 'Philippines',
+  'Pitcairn Islands', 'Poland', 'Portugal', 'Reunion', 'Rwanda', 'Saint Barthelemy',
+  'Saint Helena', 'Saint Kitts and Nevis', 'Saint Lucia', 'Saint Pierre and Miquelon',
+  'Saint Vincent and the Grenadines', 'San Marino', 'Sao Tome and Principe',
+  'Saudi Arabia', 'Serbia', 'Singapore', 'Slovakia (Slovak Republic)', 'Slovenia',
+  'South Africa', 'South Georgia and the South Sandwich Islands', 'Suriname', 'Sweden',
+  'Syrian Arab Republic', 'Tajikistan', 'Togo', 'Tonga', 'Turkmenistan', 'Tuvalu',
+  'United Arab Emirates', 'Uzbekistan', 'Wallis and Futuna', 'Zimbabwe'
+].sort();
