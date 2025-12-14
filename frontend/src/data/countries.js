@@ -22,4 +22,4 @@ export const COUNTRIES = [
   'South Africa', 'South Georgia and the South Sandwich Islands', 'Suriname', 'Sweden',
   'Syrian Arab Republic', 'Tajikistan', 'Togo', 'Tonga', 'Turkmenistan', 'Tuvalu',
   'United Arab Emirates', 'Uzbekistan', 'Wallis and Futuna', 'Zimbabwe'
-]
+].sort();
