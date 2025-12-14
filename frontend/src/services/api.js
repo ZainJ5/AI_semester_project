@@ -36,6 +36,7 @@ export const apiService = {
     }
   },
 
+  
   findSafestPath: async (startCountry, endCountry) => {
     try {
       console.log('[API] Sending path finding request from', startCountry, 'to', endCountry);
